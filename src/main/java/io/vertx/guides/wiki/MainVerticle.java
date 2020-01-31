@@ -17,10 +17,15 @@
 
 package io.vertx.guides.wiki;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
 import io.reactivex.Single;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Promise;
 import io.vertx.reactivex.core.AbstractVerticle;
+import io.vertx.reactivex.core.Vertx;
 
 /**
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
@@ -45,8 +50,16 @@ public class MainVerticle extends AbstractVerticle {
 
         return httpVerticleDeployment;
       })
-      .flatMap(id -> vertx.rxDeployVerticle("io.vertx.guides.wiki.http.AuthInitializerVerticle")) // <2>
       .subscribe(id -> promise.complete(), promise::fail); // <3>
     // end::rx-sequential-composition[]
   }
+  
+  public static void main(String[] args) throws InterruptedException {
+	  BlockingQueue<AsyncResult<String>> q = new ArrayBlockingQueue<>(1);
+	  Vertx.vertx().deployVerticle(new MainVerticle(), q::offer);
+	  AsyncResult<String> result = q.take();
+	  if (result.failed()) {
+	      throw new RuntimeException(result.cause());
+	  }
+}
 }
